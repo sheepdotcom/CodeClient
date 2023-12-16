@@ -3,6 +3,7 @@ package dev.dfonline.codeclient.config;
 import com.google.gson.JsonObject;
 import dev.dfonline.codeclient.CodeClient;
 import dev.dfonline.codeclient.FileManager;
+import dev.dfonline.codeclient.dev.menu.customchest.CustomChestHandler;
 import dev.dfonline.codeclient.dev.menu.customchest.CustomChestNumbers;
 import dev.dfonline.codeclient.hypercube.actiondump.ActionDump;
 import dev.isxander.yacl3.api.*;
@@ -485,6 +486,7 @@ public class Config {
                                 .description(OptionDescription.createBuilder()
                                         .text(Text.literal("Use a custom menu for chests, with value text boxes for quick editing."))
                                         .text(Text.of(CustomCodeChest.description))
+                                        .text(Text.literal("THIS IS IN BETA!").formatted(Formatting.YELLOW,Formatting.BOLD))
                                         .build())
                                 .binding(
                                         CustomChestMenuType.OFF,
