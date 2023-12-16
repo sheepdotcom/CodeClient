@@ -36,7 +36,7 @@ public class NoClip {
             Vec3d velocity = player.getVelocity();
 
             double x = Math.max(player.getX() + movement.x * 1.3, plot.getX() - (20 + Config.getConfig().BorderDistance));
-            double y = Math.max(player.getY() + movement.y * 1, 50);
+            double y = Math.max(player.getY() + movement.y * 1, (Config.getConfig().UnderDev?50:0));
             double z = Math.max(player.getZ() + movement.z * 1.3, plot.getZ() - Config.getConfig().BorderDistance);
             if(plot.getSize() != null) {
                 z = Math.min(z, plot.getZ() + plot.getSize().size + (1 + Config.getConfig().BorderDistance));
@@ -80,7 +80,7 @@ public class NoClip {
                 pos = new Vec3d(pos.x, nearestFloor + 2, pos.z);
             }
             if (Config.getConfig().UnderDev){
-                pos = new Vec3d(pos.x, Math.min(pos.y,50), pos.z);
+                pos = new Vec3d(pos.x, Math.max(pos.y,50), pos.z);
             }
             return new Vec3d(pos.x, pos.y, pos.z);
         }
