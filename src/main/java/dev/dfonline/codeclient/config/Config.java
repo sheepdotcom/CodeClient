@@ -326,7 +326,7 @@ public class Config {
                                         opt -> AirSpeed = opt
                                 )
                                 .controller(opt -> IntegerSliderControllerBuilder.create(opt)
-                                        .range(0, 256)
+                                        .range(0, 30)
                                         .step(1))
                                 .build())
                         .option(Option.createBuilder(float.class)
@@ -446,7 +446,6 @@ public class Config {
                                         opt -> CustomCodeChest = opt
                                 )
                                 .controller(nodeOption -> () -> new EnumController<>(nodeOption, CustomChestMenuType.class))
-                                .available(true)
                                 .build())
                         .option(Option.createBuilder(boolean.class)
                                 .name(Text.literal("Place on Air"))
