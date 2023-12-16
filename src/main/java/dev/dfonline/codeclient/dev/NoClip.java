@@ -35,19 +35,19 @@ public class NoClip {
             double nearestFloor = Math.floor(player.getY() / 5) * 5;
             Vec3d velocity = player.getVelocity();
 
-            double x = Math.max(player.getX() + movement.x * 1.3, plot.getX() - 22);
+            double x = Math.max(player.getX() + movement.x * 1.3, plot.getX() - (20 + Config.getConfig().BorderDistance));
             double y = Math.max(player.getY() + movement.y * 1, 50);
-            double z = Math.max(player.getZ() + movement.z * 1.3, plot.getZ() - 2);
+            double z = Math.max(player.getZ() + movement.z * 1.3, plot.getZ() - Config.getConfig().BorderDistance);
             if(plot.getSize() != null) {
-                z = Math.min(z, plot.getZ() + plot.getSize().size + 3);
-                if(z == plot.getZ() + plot.getSize().size + 3 && velocity.getZ() > 0) player.setVelocityClient(velocity.x, velocity.y, 0);
+                z = Math.min(z, plot.getZ() + plot.getSize().size + (1 + Config.getConfig().BorderDistance));
+                if(z == plot.getZ() + plot.getSize().size + (1 + Config.getConfig().BorderDistance) && velocity.getZ() > 0) player.setVelocityClient(velocity.x, velocity.y, 0);
             }
-            if(z == plot.getZ() - 2  && velocity.getZ() < 0) player.setVelocityClient(velocity.x, velocity.y, 0);
-            if(x == plot.getX() - 22 && velocity.getX() < 0) player.setVelocityClient(0, velocity.y, velocity.z);
+            if(z == plot.getZ() - Config.getConfig().BorderDistance  && velocity.getZ() < 0) player.setVelocityClient(velocity.x, velocity.y, 0);
+            if(x == plot.getX() - (20 + Config.getConfig().BorderDistance) && velocity.getX() < 0) player.setVelocityClient(0, velocity.y, velocity.z);
 
             player.setOnGround(false);
             boolean wantsToFall = !Config.getConfig().TeleportDown && player.isSneaking() && (player.getPitch() >= 90 - Config.getConfig().DownAngle);
-            if((y < nearestFloor && !wantsToFall && !player.getAbilities().flying) || y == 50) {
+            if((y < nearestFloor && !wantsToFall && !player.getAbilities().flying) || (y == 50 && !Config.getConfig().UnderDev)) {
                 player.setVelocityClient(velocity.x, 0, velocity.z);
                 y = nearestFloor;
                 player.setOnGround(true);
@@ -78,6 +78,9 @@ public class NoClip {
             if (isInsideWall(pos)) {
                 double nearestFloor = Math.floor(player.getY() / 5) * 5;
                 pos = new Vec3d(pos.x, nearestFloor + 2, pos.z);
+            }
+            if (Config.getConfig().UnderDev){
+                pos = new Vec3d(pos.x, Math.min(pos.y,50), pos.z);
             }
             return new Vec3d(pos.x, pos.y, pos.z);
         }

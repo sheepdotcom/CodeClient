@@ -59,6 +59,9 @@ public class Config {
     public boolean UseSelectionColor = true;
     public int Line4Color = 0xFF8800;
     public boolean SignPeeker = true;
+    public boolean SignColored = true;
+    public int BorderDistance = 2;
+    public boolean UnderDev = false;
     public CustomChestMenuType CustomCodeChest = CustomChestMenuType.OFF;
 
     private void save() {
@@ -104,6 +107,9 @@ public class Config {
             object.addProperty("UseSelectionColor",UseSelectionColor);
             object.addProperty("Line4Color",Line4Color);
             object.addProperty("SignPeeker",SignPeeker);
+            object.addProperty("SignColored",SignColored);
+            object.addProperty("BorderDistance", BorderDistance);
+            object.addProperty("UnderDev",UnderDev);
             object.addProperty("CustomCodeChest",CustomCodeChest.name());
             FileManager.writeConfig(object.toString());
         } catch (Exception e) {
@@ -286,6 +292,20 @@ public class Config {
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .option(Option.createBuilder(int.class)
+                                .name(Text.literal("Border Distance"))
+                                .description(OptionDescription.createBuilder()
+                                        .text(Text.literal("How far away the custom dev border is when using NoClip."))
+                                        .build())
+                                .binding(
+                                        2,
+                                        () -> BorderDistance,
+                                        opt -> BorderDistance = opt
+                                )
+                                .controller(opt -> IntegerSliderControllerBuilder.create(opt)
+                                        .range(0, 64)
+                                        .step(1))
+                                .build())
+                        .option(Option.createBuilder(int.class)
                                 .name(Text.literal("AirStrafe Modifier"))
                                 .description(OptionDescription.createBuilder()
                                         .text(Text.literal("How much faster you go when jumping in dev space."))
@@ -297,7 +317,7 @@ public class Config {
                                         opt -> AirSpeed = opt
                                 )
                                 .controller(opt -> IntegerSliderControllerBuilder.create(opt)
-                                        .range(0, 30)
+                                        .range(0, 256)
                                         .step(1))
                                 .build())
                         .option(Option.createBuilder(float.class)
@@ -336,6 +356,19 @@ public class Config {
                                         false,
                                         () -> TeleportDown,
                                         opt -> TeleportDown = opt
+                                )
+                                .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.createBuilder(boolean.class)
+                                .name(Text.literal("Underground Dev Area"))
+                                .description(OptionDescription.createBuilder()
+                                        .text(Text.literal("Allows you to go under the dev area."))
+                                        .text(Text.literal("Completely useless as you cannot place down there."))
+                                        .build())
+                                .binding(
+                                        true,
+                                        () -> UnderDev,
+                                        option -> UnderDev = option
                                 )
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
@@ -602,6 +635,16 @@ public class Config {
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Sign Colors"))
                                 .description(OptionDescription.of(Text.literal("Override the color of text on the signs in the dev space."),Text.literal("Using #000000 (pure black) has no effect and disable disable it.")))
+                                .option(Option.createBuilder(boolean.class)
+                                        .name(Text.literal("Enable Sign Colors"))
+                                        .description(OptionDescription.of(Text.literal("Enable custom sign colors for code blocks in the dev space.")))
+                                        .binding(
+                                                true,
+                                                () -> SignColored,
+                                                opt -> SignColored = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
                                 .option(Option.createBuilder(Color.class)
                                         .name(Text.literal("Line 1"))
                                         .description(OptionDescription.of(Text.literal("The top line on a sign."),Text.literal("Tells you what block it is, such as PLAYER ACTION")))
