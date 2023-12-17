@@ -62,6 +62,8 @@ public class Config {
     public boolean SignColored = true;
     public int BorderDistance = 2;
     public boolean UnderDev = false;
+    public boolean NoNumberTrim = false;
+    public boolean TextValuePreview = false;
     public CustomChestMenuType CustomCodeChest = CustomChestMenuType.OFF;
 
     private void save() {
@@ -110,6 +112,8 @@ public class Config {
             object.addProperty("SignColored",SignColored);
             object.addProperty("BorderDistance", BorderDistance);
             object.addProperty("UnderDev",UnderDev);
+            object.addProperty("NoNumberTrim",NoNumberTrim);
+            object.addProperty("TextValuePreview",TextValuePreview);
             object.addProperty("CustomCodeChest",CustomCodeChest.name());
             FileManager.writeConfig(object.toString());
         } catch (Exception e) {
@@ -523,16 +527,6 @@ public class Config {
                                 .flag(OptionFlag.RELOAD_CHUNKS)
                                 .build())
                         .option(Option.createBuilder(Boolean.class)
-                                .name(Text.literal("Show I On Line Scope"))
-                                .description(OptionDescription.of(Text.literal("Whenever LINE is shortened, shorten it to I.")))
-                                .binding(
-                                        false,
-                                        () -> UseIForLineScope,
-                                        opt -> UseIForLineScope = opt
-                                )
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .option(Option.createBuilder(Boolean.class)
                                 .name(Text.literal("Show sign text from behind"))
                                 .description(OptionDescription.of(Text.literal("Show the text on a sign when looking at a codeblock from behind in a popup.")))
                                 .binding(
@@ -544,6 +538,42 @@ public class Config {
                                 .build())
                         //</editor-fold>
                         //<editor-fold desc="Chest Preview">
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Value Displays"))
+                                .description(OptionDescription.of(Text.literal("An overlay showing the value of an item")))
+                                .option(Option.createBuilder(Boolean.class)
+                                        .name(Text.literal("Show I On Line Scope"))
+                                        .description(OptionDescription.of(Text.literal("Whenever LINE is shortened, shorten it to I.")))
+                                        .binding(
+                                                false,
+                                                () -> UseIForLineScope,
+                                                opt -> UseIForLineScope = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.createBuilder(Boolean.class)
+                                        .name(Text.literal("No Number Trim"))
+                                        .description(OptionDescription.of(Text.literal("Removes the max length for number displays.")))
+                                        .binding(
+                                                false,
+                                                () -> NoNumberTrim,
+                                                opt -> NoNumberTrim = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.createBuilder(Boolean.class)
+                                        .name(Text.literal("Enable Text Display"))
+                                        .description(OptionDescription.of(
+                                                Text.literal("Enables displaying the value of a text item."),
+                                                Text.literal("Does not work with minimessage!")))
+                                        .binding(
+                                                false,
+                                                () -> TextValuePreview,
+                                                opt -> TextValuePreview = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                            .build())
                         .group(OptionGroup.createBuilder()
                                 .name(Text.literal("Chest Preview"))
                                 .description(OptionDescription.of(Text.literal("An overlay showing the items from inside a chest.")))

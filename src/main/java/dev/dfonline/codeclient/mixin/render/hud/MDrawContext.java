@@ -3,6 +3,7 @@ package dev.dfonline.codeclient.mixin.render.hud;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.dfonline.codeclient.config.Config;
+import dev.dfonline.codeclient.hypercube.item.NamedItem;
 import dev.dfonline.codeclient.hypercube.item.Scope;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -50,11 +51,18 @@ public abstract class MDrawContext {
             }
             case "num": {
                 String name = data.get("name").getAsString();
-                if(textRenderer.getWidth(Text.of(name)) > 16) {
+                if(textRenderer.getWidth(Text.of(name)) > 16 && !Config.getConfig().NoNumberTrim) {
                     var avail = textRenderer.trimToWidth(name,16-2);
                     text = Text.literal(avail).formatted(Formatting.RED).append(Text.literal(".".repeat((16-textRenderer.getWidth(Text.of(avail))) / 2)).formatted(Formatting.WHITE));
                 }
                 else text = Text.literal(name).formatted(Formatting.RED);
+                break;
+            }
+            case "txt","comp": {
+                if (Config.getConfig().TextValuePreview) {
+                    String name = data.get("name").getAsString();
+                    text = Text.literal(name).formatted(Formatting.GRAY);
+                }
                 break;
             }
             default: {
