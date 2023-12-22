@@ -1,12 +1,14 @@
 package dev.dfonline.codeclient.websocket;
 
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import com.google.gson.JsonObject;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import dev.dfonline.codeclient.CodeClient;
 import dev.dfonline.codeclient.Utility;
 import dev.dfonline.codeclient.action.Action;
@@ -15,6 +17,8 @@ import dev.dfonline.codeclient.action.impl.ClearPlot;
 import dev.dfonline.codeclient.action.impl.GetPlotSize;
 import dev.dfonline.codeclient.action.impl.MoveToSpawn;
 import dev.dfonline.codeclient.action.impl.PlaceTemplates;
+import dev.dfonline.codeclient.location.Dev;
+import dev.dfonline.codeclient.location.Location;
 import dev.dfonline.codeclient.location.Plot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -81,6 +85,8 @@ public class SocketHandler {
             case "setinv" -> SocketHandler.actionQueue.add(new SetInventory(content));
             case "give" -> SocketHandler.actionQueue.add(new Give(content));
             case "mode" -> SocketHandler.actionQueue.add(new Mode(content));
+            case "msg" -> SocketHandler.actionQueue.add(new Msg(content));
+            case "cmd" -> SocketHandler.actionQueue.add(new Cmd(content));
             default -> connection.send("invalid");
         }
         topAction = getTopAction();
@@ -360,6 +366,50 @@ public class SocketHandler {
             }
             next();
         }
+        @Override
+        public void message(WebSocket responder, String message) {}
+    }
+    private static class Msg extends SocketHandler.Action {
+        private final String msg;
+
+        Msg(String msg) {
+            super("msg");
+            this.msg = msg;
+        }
+
+        @Override
+        public void set(WebSocket responder) {
+
+        }
+
+        @Override
+        public void start(WebSocket responder) {
+            CodeClient.MC.getNetworkHandler().sendChatMessage(msg);
+            next();
+        }
+
+        @Override
+        public void message(WebSocket responder, String message) {}
+    }
+    private static class Cmd extends SocketHandler.Action {
+        private final String cmd;
+
+        Cmd(String cmd) {
+            super("cmd");
+            this.cmd = cmd;
+        }
+
+        @Override
+        public void set(WebSocket responder) {
+
+        }
+
+        @Override
+        public void start(WebSocket responder) {
+            CodeClient.MC.getNetworkHandler().sendCommand(cmd);
+            next();
+        }
+
         @Override
         public void message(WebSocket responder, String message) {}
     }
