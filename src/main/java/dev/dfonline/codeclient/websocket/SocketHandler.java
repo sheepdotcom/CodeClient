@@ -87,6 +87,7 @@ public class SocketHandler {
             case "mode" -> SocketHandler.actionQueue.add(new Mode(content));
             case "msg" -> SocketHandler.actionQueue.add(new Msg(content));
             case "cmd" -> SocketHandler.actionQueue.add(new Cmd(content));
+            case "layer" -> SocketHandler.actionQueue.add(new Layer(content));
             default -> connection.send("invalid");
         }
         topAction = getTopAction();
@@ -354,9 +355,8 @@ public class SocketHandler {
         }
 
         @Override
-        public void set(WebSocket responder) {
+        public void set(WebSocket responder) {}
 
-        }
         @Override
         public void start(WebSocket responder) {
             if (CodeClient.location instanceof Plot && !command.isEmpty()) {
@@ -378,9 +378,7 @@ public class SocketHandler {
         }
 
         @Override
-        public void set(WebSocket responder) {
-
-        }
+        public void set(WebSocket responder) {}
 
         @Override
         public void start(WebSocket responder) {
@@ -400,13 +398,31 @@ public class SocketHandler {
         }
 
         @Override
-        public void set(WebSocket responder) {
-
-        }
+        public void set(WebSocket responder) {}
 
         @Override
         public void start(WebSocket responder) {
             CodeClient.MC.getNetworkHandler().sendCommand(cmd);
+            next();
+        }
+
+        @Override
+        public void message(WebSocket responder, String message) {}
+    }
+    private static class Layer extends SocketHandler.Action {
+        private final String content;
+
+        Layer(String content) {
+            super("content");
+            this.content = "p codespace " + content;
+        }
+
+        @Override
+        public void set(WebSocket responder) {}
+
+        @Override
+        public void start(WebSocket responder) {
+            CodeClient.MC.getNetworkHandler().sendCommand(content);
             next();
         }
 
