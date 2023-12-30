@@ -1,8 +1,11 @@
 package dev.dfonline.codeclient.mixin;
 
 import dev.dfonline.codeclient.CodeClient;
+import dev.dfonline.codeclient.config.Config;
 import dev.dfonline.codeclient.location.Creator;
 import dev.dfonline.codeclient.location.Plot;
+import dev.dfonline.codeclient.location.Spawn;
+import dev.dfonline.codeclient.switcher.NodeSwitcher;
 import dev.dfonline.codeclient.switcher.SpeedSwitcher;
 import dev.dfonline.codeclient.switcher.StateSwitcher;
 import net.minecraft.client.Keyboard;
@@ -24,9 +27,13 @@ public class MKeyboard {
 
     @Inject(method = "processF3", at = @At("HEAD"), cancellable = true)
     private void handleF3(int key, CallbackInfoReturnable<Boolean> cir) {
-        if(key == stateSwitcherKey) {
-            if(CodeClient.location instanceof Plot) {
+        if(key == stateSwitcherKey && Config.getConfig().EnableSwitchers) {
+            if(CodeClient.location instanceof Plot && Config.getConfig().ModeSwitcher) {
                 CodeClient.MC.setScreen(new StateSwitcher());
+                cir.setReturnValue(true);
+            }
+            if(CodeClient.location instanceof Spawn && Config.getConfig().NodeSwitcher) {
+                CodeClient.MC.setScreen(new NodeSwitcher());
                 cir.setReturnValue(true);
             }
         }

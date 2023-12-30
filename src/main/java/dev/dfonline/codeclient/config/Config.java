@@ -3,7 +3,6 @@ package dev.dfonline.codeclient.config;
 import com.google.gson.JsonObject;
 import dev.dfonline.codeclient.CodeClient;
 import dev.dfonline.codeclient.FileManager;
-import dev.dfonline.codeclient.dev.menu.customchest.CustomChestHandler;
 import dev.dfonline.codeclient.dev.menu.customchest.CustomChestNumbers;
 import dev.dfonline.codeclient.hypercube.actiondump.ActionDump;
 import dev.isxander.yacl3.api.*;
@@ -69,6 +68,9 @@ public class Config {
     public boolean TextValuePreview = false;
     public CustomChestMenuType CustomCodeChest = CustomChestMenuType.OFF;
     public boolean PickAction = true;
+    public boolean EnableSwitchers = true;
+    public boolean ModeSwitcher = true;
+    public boolean NodeSwitcher = false;
 
     private void save() {
         try {
@@ -120,6 +122,9 @@ public class Config {
             object.addProperty("TextValuePreview",TextValuePreview);
             object.addProperty("CustomCodeChest",CustomCodeChest.name());
             object.addProperty("PickAction",PickAction);
+            object.addProperty("EnableSwitchers",EnableSwitchers);
+            object.addProperty("ModeSwitcher",ModeSwitcher);
+            object.addProperty("NodeSwitcher",NodeSwitcher);
             FileManager.writeConfig(object.toString());
         } catch (Exception e) {
             CodeClient.LOGGER.info("Couldn't save config: " + e);
@@ -282,6 +287,47 @@ public class Config {
                                         .build())
                                 .build())
                         //</editor-fold>
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.literal("Switchers"))
+                                .description(OptionDescription.of(Text.literal("Funny menu thingies when f3+f4")))
+                                .collapsed(true)
+                                .option(Option.createBuilder(boolean.class)
+                                        .name(Text.literal("Enable Switchers"))
+                                        .description(OptionDescription.createBuilder()
+                                                .text(Text.literal("Enable the funny menu switcher thingies when using f3+f4."))
+                                                .build())
+                                        .binding(
+                                                true,
+                                                () -> EnableSwitchers,
+                                                opt -> EnableSwitchers = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.createBuilder(boolean.class)
+                                        .name(Text.literal("Mode Switcher"))
+                                        .description(OptionDescription.createBuilder()
+                                                .text(Text.literal("Enable the mode switcher when pressing f3+f4 in a plot."))
+                                                .build())
+                                        .binding(
+                                                true,
+                                                () -> ModeSwitcher,
+                                                opt -> ModeSwitcher = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.createBuilder(boolean.class)
+                                        .name(Text.literal("Node Switcher"))
+                                        .description(OptionDescription.createBuilder()
+                                                .text(Text.literal("Enable the node switcher when pressing f3+f4 in node spawn."))
+                                                .build())
+                                        .binding(
+                                                false,
+                                                () -> NodeSwitcher,
+                                                opt -> NodeSwitcher = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .build())
                         .build())
                 //</editor-fold>
                 //<editor-fold desc="Navigation">
