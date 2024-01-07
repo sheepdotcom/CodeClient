@@ -486,7 +486,6 @@ public class Config {
                                 .description(OptionDescription.createBuilder()
                                         .text(Text.literal("Use a custom menu for chests, with value text boxes for quick editing."))
                                         .text(Text.of(CustomCodeChest.description))
-                                        .text(Text.literal("THIS IS IN BETA!").formatted(Formatting.YELLOW,Formatting.BOLD))
                                         .build())
                                 .binding(
                                         CustomChestMenuType.OFF,
