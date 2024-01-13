@@ -378,7 +378,7 @@ public class Config {
                                 .build())
                         .option(Option.createBuilder(float.class)
                                 .name(Text.literal("Angle to go up"))
-                                .description(OptionDescription.of(Text.literal("When facing up, within this angle, jumping will take you up a layer.")))
+                                .description(OptionDescription.of(Text.literal("When facing up, within this angle, jumping will take you up a layer")))
                                 .binding(
                                         50F,
                                         () -> UpAngle,
@@ -397,7 +397,7 @@ public class Config {
                                 .build())
                         .option(Option.createBuilder(boolean.class)
                                 .name(Text.literal("Teleport Up"))
-                                .description(OptionDescription.of(Text.literal("If when facing up")))
+                                .description(OptionDescription.of(Text.literal("When jumping and facing up, you will get teleported to the layer above")))
                                 .binding(
                                         false,
                                         () -> TeleportUp,
@@ -407,7 +407,7 @@ public class Config {
                                 .build())
                         .option(Option.createBuilder(boolean.class)
                                 .name(Text.literal("Teleport Down"))
-                                .description(OptionDescription.of(Text.literal("Teleport Down when using")))
+                                .description(OptionDescription.of(Text.literal("When crouching and facing down, you will get teleported to the layer underneath")))
                                 .binding(
                                         false,
                                         () -> TeleportDown,
