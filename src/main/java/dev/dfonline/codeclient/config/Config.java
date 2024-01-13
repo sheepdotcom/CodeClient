@@ -373,7 +373,7 @@ public class Config {
                                         opt -> AirSpeed = opt
                                 )
                                 .controller(opt -> IntegerSliderControllerBuilder.create(opt)
-                                        .range(0, 30)
+                                        .range(0, 256)
                                         .step(1))
                                 .build())
                         .option(Option.createBuilder(float.class)
