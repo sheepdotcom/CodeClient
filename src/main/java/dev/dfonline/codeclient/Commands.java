@@ -12,6 +12,7 @@ import dev.dfonline.codeclient.config.Config;
 import dev.dfonline.codeclient.dev.BuildClip;
 import dev.dfonline.codeclient.dev.LastPos;
 import dev.dfonline.codeclient.hypercube.actiondump.ActionDump;
+import dev.dfonline.codeclient.hypercube.template.Template;
 import dev.dfonline.codeclient.location.*;
 import dev.dfonline.codeclient.websocket.SocketHandler;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -120,27 +121,27 @@ public class Commands {
             return 0;
         }));
 
-        dispatcher.register(literal("back").executes(context -> {
-            if(CodeClient.location instanceof Creator plot) {
-                if(plot.devPos == null) {
-                    Utility.sendMessage("There is no position to go back to!", ChatType.FAIL);
-                    return 1;
-                }
-                if(!(CodeClient.currentAction instanceof None)) {
-                    Utility.sendMessage("CodeClient is currently busy, try again in a moment.",ChatType.FAIL);
-                    return 1;
-                }
-                if(LastPos.tpBack()) return 0;
-                else {
-                    Utility.sendMessage("An error occurred whilst trying to go back.",ChatType.FAIL);
-                    return 1;
-                }
-            }
-            else {
-                Utility.sendMessage("You must be in dev or build mode to do this!",ChatType.FAIL);
-                return 1;
-            }
-        }));
+//        dispatcher.register(literal("back").executes(context -> {
+//            if(CodeClient.location instanceof Creator plot) {
+//                if(plot.devPos == null) {
+//                    Utility.sendMessage("There is no position to go back to!", ChatType.FAIL);
+//                    return 1;
+//                }
+//                if(!(CodeClient.currentAction instanceof None)) {
+//                    Utility.sendMessage("CodeClient is currently busy, try again in a moment.",ChatType.FAIL);
+//                    return 1;
+//                }
+//                if(LastPos.tpBack()) return 0;
+//                else {
+//                    Utility.sendMessage("An error occurred whilst trying to go back.",ChatType.FAIL);
+//                    return 1;
+//                }
+//            }
+//            else {
+//                Utility.sendMessage("You must be in dev or build mode to do this!",ChatType.FAIL);
+//                return 1;
+//            }
+//        }));
 
         dispatcher.register(literal("getspawn").executes(context -> {
             if(!(CodeClient.location instanceof Dev)) return 1;
@@ -176,6 +177,23 @@ public class Commands {
 //            return 0;
 //        }));
 
+        dispatcher.register(literal("scanplot").executes(context -> {
+            if(CodeClient.location instanceof Dev) {
+                var scan = new ArrayList<Template>();
+                CodeClient.currentAction = new ScanPlot(() -> {
+                    CodeClient.currentAction = new None();
+                    Utility.sendMessage("Done!", ChatType.SUCCESS);
+                    Utility.sendMessage("Results:", ChatType.INFO);
+                    for (Template template : scan) {
+                        Utility.sendMessage(String.valueOf(template.blocks.size()));
+                    }
+
+                },scan);
+                CodeClient.currentAction.init();
+                return 0;
+            }
+            else return 1;
+        }));
         dispatcher.register(literal("scanfor").then(argument("name", StringArgumentType.greedyString()).executes(context -> {
             if(CodeClient.location instanceof Dev dev) {
                 Pattern pattern = Pattern.compile(context.getArgument("name", String.class), Pattern.CASE_INSENSITIVE);
