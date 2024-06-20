@@ -2,11 +2,11 @@ package dev.dfonline.codeclient.hypercube.actiondump;
 
 import net.minecraft.item.ItemStack;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public interface Searchable {
     List<String> getTerms();
+
     ItemStack getItem();
 
     class StaticSearchable implements Searchable {
@@ -14,7 +14,7 @@ public interface Searchable {
         private final ItemStack item;
 
         public StaticSearchable(ItemStack item) {
-            this.terms = new ArrayList<>();
+            this.terms = List.of(item.getName().getString());
             this.item = item;
         }
 

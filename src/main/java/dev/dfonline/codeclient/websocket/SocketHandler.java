@@ -11,8 +11,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import dev.dfonline.codeclient.CodeClient;
 import dev.dfonline.codeclient.Utility;
-import dev.dfonline.codeclient.action.Action;
 import dev.dfonline.codeclient.action.None;
+import dev.dfonline.codeclient.action.impl.*;
 import dev.dfonline.codeclient.action.impl.ClearPlot;
 import dev.dfonline.codeclient.action.impl.GetPlotSize;
 import dev.dfonline.codeclient.action.impl.MoveToSpawn;
@@ -21,17 +21,21 @@ import dev.dfonline.codeclient.location.Dev;
 import dev.dfonline.codeclient.location.Location;
 import dev.dfonline.codeclient.location.Plot;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.StringNbtReader;
 import org.java_websocket.WebSocket;
 
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 public class SocketHandler {
     public static final int PORT = 31375;
+    private static final ArrayList<Action> actionQueue = new ArrayList<>();
     private static WebSocket connection = null;
     private static boolean authorised = false;
-    private static final ArrayList<Action> actionQueue = new ArrayList<>();
     private static SocketServer websocket;
     private static Thread socketThread;
 
@@ -48,38 +52,40 @@ public class SocketHandler {
     public static void stop() {
         try {
             websocket.stop();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     public static void setAuthorised(boolean isAuthorised) {
         actionQueue.clear();
         authorised = isAuthorised;
-        if(isAuthorised) connection.send("auth");
+        if (isAuthorised) connection.send("auth");
     }
 
     public static void setConnection(WebSocket socket) {
-        if(socket != null) actionQueue.clear();
+        if (socket != null) actionQueue.clear();
         connection = socket;
     }
 
     public static void onMessage(String message) {
         JsonObject response = new JsonObject();
-        if(!authorised) {
+        if (!authorised) {
             connection.send("noauth");
             return;
         }
         String[] arguments = message.split(" ");
         Action topAction = getTopAction();
-        if(arguments[0] == null) return;
+        if (arguments[0] == null) return;
         String content = arguments.length > 1 ? message.substring(arguments[0].length() + 1) : "";
-        if(topAction != null && arguments.length > 1 && Objects.equals(topAction.name, arguments[0])) {
-            topAction.message(connection,content);
+        if (topAction != null && arguments.length > 1 && Objects.equals(topAction.name, arguments[0])) {
+            topAction.message(connection, content);
             return;
         }
         switch (arguments[0]) {
             case "clear" -> SocketHandler.actionQueue.add(new Clear());
             case "spawn" -> SocketHandler.actionQueue.add(new Spawn());
             case "size" -> SocketHandler.actionQueue.add(new Size());
+            case "scan" -> SocketHandler.actionQueue.add(new Scan());
             case "place" -> SocketHandler.actionQueue.add(new Place());
             case "inv" -> SocketHandler.actionQueue.add(new SendInventory());
             case "setinv" -> SocketHandler.actionQueue.add(new SetInventory(content));
@@ -91,25 +97,25 @@ public class SocketHandler {
             default -> connection.send("invalid");
         }
         topAction = getTopAction();
-        if(topAction != null && arguments.length > 1 && Objects.equals(topAction.name, arguments[0])) {
-            topAction.message(connection,content);
+        if (topAction != null && arguments.length > 1 && Objects.equals(topAction.name, arguments[0])) {
+            topAction.message(connection, content);
         }
         Action firstAction = actionQueue.get(0);
-        if(firstAction == null) return;
-        if(firstAction.active) return;
+        if (firstAction == null) return;
+        if (firstAction.active) return;
         next();
     }
 
     private static Action getTopAction() {
-        if(actionQueue.isEmpty()) return null;
+        if (actionQueue.isEmpty()) return null;
         return actionQueue.get(actionQueue.size() - 1);
     }
 
     private static void next() {
-        if(actionQueue.isEmpty()) return;
+        if (actionQueue.isEmpty()) return;
         Action firstAction = actionQueue.get(0);
-        if(firstAction == null) return;
-        if(firstAction.active) {
+        if (firstAction == null) return;
+        if (firstAction.active) {
             actionQueue.remove(0);
             CodeClient.LOGGER.info(firstAction.name + " done");
             next();
@@ -121,8 +127,8 @@ public class SocketHandler {
     }
 
     private abstract static class Action {
-        boolean active = false;
         public final String name;
+        boolean active = false;
 
         Action(String name) {
             this.name = name;
@@ -145,21 +151,36 @@ public class SocketHandler {
     }
 
     private static class Clear extends SocketHandler.Action {
-        Clear() {super("clear");}
-        @Override public void set(WebSocket responder) {}
-        @Override public void start(WebSocket responder) {
+        Clear() {
+            super("clear");
+        }
+
+        @Override
+        public void set(WebSocket responder) {
+        }
+
+        @Override
+        public void start(WebSocket responder) {
             CodeClient.currentAction = new ClearPlot(() -> {
                 next();
             });
             CodeClient.currentAction.init();
         }
-        @Override public void message(WebSocket responder, String message) {}
+
+        @Override
+        public void message(WebSocket responder, String message) {
+        }
     }
+
     private static class Spawn extends SocketHandler.Action {
         Spawn() {
             super("spawn");
         }
-        @Override public void set(WebSocket responder) {}
+
+        @Override
+        public void set(WebSocket responder) {
+        }
+
         @Override
         public void start(WebSocket responder) {
             CodeClient.currentAction = new MoveToSpawn(() -> {
@@ -167,25 +188,30 @@ public class SocketHandler {
             });
             CodeClient.currentAction.init();
         }
-        @Override public void message(WebSocket responder, String message) {}
+
+        @Override
+        public void message(WebSocket responder, String message) {
+        }
     }
+
     private static class Size extends SocketHandler.Action {
         Size() {
             super("size");
         }
 
-        @Override public void set(WebSocket responder) {}
+        @Override
+        public void set(WebSocket responder) {
+        }
 
         @Override
         public void start(WebSocket responder) {
-            if(CodeClient.location instanceof Plot plot) {
-                if(plot.getSize() != null) {
-                    if(responder.isOpen()) responder.send(plot.getSize().name());
+            if (CodeClient.location instanceof Plot plot) {
+                if (plot.getSize() != null) {
+                    if (responder.isOpen()) responder.send(plot.getSize().name());
                     next();
-                }
-                else {
+                } else {
                     CodeClient.currentAction = new GetPlotSize(() -> {
-                        if(responder.isOpen()) responder.send(plot.getSize().name());
+                        if (responder.isOpen()) responder.send(plot.getSize().name());
                         next();
                     });
                 }
@@ -193,79 +219,129 @@ public class SocketHandler {
         }
 
         @Override
-        public void message(WebSocket responder, String message) {}
+        public void message(WebSocket responder, String message) {
+        }
     }
+
+    private static class Scan extends SocketHandler.Action {
+        Scan() {
+            super("scan");
+        }
+
+        @Override
+        public void set(WebSocket responder) {
+
+        }
+
+        @Override
+        public void start(WebSocket responder) {
+            ArrayList<ItemStack> items = new ArrayList<>();
+            CodeClient.currentAction = new ScanPlot(() -> {
+                if(items.isEmpty()) {
+                    responder.send("empty");
+                    CodeClient.currentAction = new None();
+                    next();
+                    return;
+                }
+                var builder = new StringBuilder();
+                for (var item : items) {
+                    var data = Utility.templateDataItem(item);
+                    if (data == null) continue;
+                    builder.append(data).append("\n");
+                }
+                builder.deleteCharAt(builder.length() - 1);
+                responder.send(builder.toString());
+                CodeClient.currentAction = new None();
+                next();
+            }, items);
+            CodeClient.currentAction.init();
+        }
+
+        @Override
+        public void message(WebSocket responder, String message) {
+
+        }
+    }
+
     private static class Place extends SocketHandler.Action {
-        private interface CreatePlacer {
-            PlaceTemplates run(ArrayList<ItemStack> templates, WebSocket responder);
-        }
-
-        private enum Method {
-            DEFAULT((ArrayList<ItemStack> templates, WebSocket responder) -> Utility.createPlacer(templates, () -> {
-                CodeClient.currentAction = new None();
-                if(responder.isOpen()) responder.send("place done");
-                next();})),
-            COMPACT((ArrayList<ItemStack> templates, WebSocket responder) -> Utility.createPlacer(templates, () -> {
-                CodeClient.currentAction = new None();
-                if(responder.isOpen()) responder.send("place done");
-                next();},true)),
-            SWAP((ArrayList<ItemStack> templates, WebSocket responder) -> Utility.createSwapper(templates, () -> {
-                CodeClient.currentAction = new None();
-                if(responder.isOpen()) responder.send("place done");
-                next();}).swap()),
-            ;
-
-            public final CreatePlacer createPlacer;
-            Method(CreatePlacer createPlacer) {
-                this.createPlacer = createPlacer;
-            }
-        }
         private final ArrayList<ItemStack> templates = new ArrayList<>();
-        private Method method = Method.DEFAULT;
         public boolean ready = false;
-
+        private Method method = Method.DEFAULT;
         Place() {
             super("place");
         }
 
-        @Override public void set(WebSocket responder) {}
+        @Override
+        public void set(WebSocket responder) {
+        }
 
         @Override
         public void start(WebSocket responder) {
-            if(!ready) return;
-            var placer = method.createPlacer.run(templates,responder);
-            if(placer == null) return;
+            if (!ready) return;
+            var placer = method.createPlacer.run(templates, responder);
+            if (placer == null) return;
             CodeClient.currentAction = placer;
             CodeClient.currentAction.init();
         }
 
         @Override
         public void message(WebSocket responder, String message) {
-            if(message.equals("compact")) {
+            if (message.equals("compact")) {
                 this.method = Method.COMPACT;
                 return;
             }
-            if(message.equals("swap")) {
+            if (message.equals("swap")) {
                 this.method = Method.SWAP;
                 return;
             }
-            if(message.equals("go")) {
+            if (message.equals("go")) {
                 this.ready = true;
-                if(Objects.equals(actionQueue.get(0), this)) {
+                if (Objects.equals(actionQueue.get(0), this)) {
                     this.start(responder);
                 }
                 return;
             }
             templates.add(Utility.makeTemplate(message));
         }
+
+        private enum Method {
+            DEFAULT((ArrayList<ItemStack> templates, WebSocket responder) -> Utility.createPlacer(templates, () -> {
+                CodeClient.currentAction = new None();
+                if (responder.isOpen()) responder.send("place done");
+                next();
+            })),
+            COMPACT((ArrayList<ItemStack> templates, WebSocket responder) -> Utility.createPlacer(templates, () -> {
+                CodeClient.currentAction = new None();
+                if (responder.isOpen()) responder.send("place done");
+                next();
+            }, true)),
+            SWAP((ArrayList<ItemStack> templates, WebSocket responder) -> Utility.createSwapper(templates, () -> {
+                CodeClient.currentAction = new None();
+                if (responder.isOpen()) responder.send("place done");
+                next();
+            }).swap()),
+            ;
+
+            public final CreatePlacer createPlacer;
+
+            Method(CreatePlacer createPlacer) {
+                this.createPlacer = createPlacer;
+            }
+        }
+
+        private interface CreatePlacer {
+            PlaceTemplates run(ArrayList<ItemStack> templates, WebSocket responder);
+        }
     }
+
     private static class SendInventory extends SocketHandler.Action {
         SendInventory() {
             super("inv");
         }
 
         @Override
-        public void set(WebSocket responder) {}
+        public void set(WebSocket responder) {
+        }
 
         @Override
         public void start(WebSocket responder) {
@@ -276,8 +352,10 @@ public class SocketHandler {
         }
 
         @Override
-        public void message(WebSocket responder, String message) {}
+        public void message(WebSocket responder, String message) {
+        }
     }
+
     private static class SetInventory extends SocketHandler.Action {
         private final String content;
 
@@ -287,11 +365,12 @@ public class SocketHandler {
         }
 
         @Override
-        public void set(WebSocket responder) {}
+        public void set(WebSocket responder) {
+        }
 
         @Override
         public void start(WebSocket responder) {
-            if(!CodeClient.MC.player.isCreative()) {
+            if (!CodeClient.MC.player.isCreative()) {
                 responder.send("not creative mode");
                 next();
                 return;
@@ -299,20 +378,21 @@ public class SocketHandler {
             try {
                 NbtCompound nbt = new NbtCompound();
                 CodeClient.MC.player.writeNbt(nbt);
-                nbt.put("Inventory",StringNbtReader.parse("{Inventory:" + content + "}").getList("Inventory", NbtElement.COMPOUND_TYPE));
+                nbt.put("Inventory", StringNbtReader.parse("{Inventory:" + content + "}").getList("Inventory", NbtElement.COMPOUND_TYPE));
                 CodeClient.MC.player.readNbt(nbt);
                 Utility.sendInventory();
             } catch (CommandSyntaxException e) {
                 responder.send("invalid nbt");
-            }
-            finally {
+            } finally {
                 next();
             }
         }
 
         @Override
-        public void message(WebSocket responder, String message) {}
+        public void message(WebSocket responder, String message) {
+        }
     }
+
     private static class Give extends SocketHandler.Action {
         private final String content;
 
@@ -322,11 +402,12 @@ public class SocketHandler {
         }
 
         @Override
-        public void set(WebSocket responder) {}
+        public void set(WebSocket responder) {
+        }
 
         @Override
         public void start(WebSocket responder) {
-            if(!CodeClient.MC.player.isCreative()) {
+            if (!CodeClient.MC.player.isCreative()) {
                 responder.send("not creative mode");
                 next();
                 return;
@@ -336,17 +417,18 @@ public class SocketHandler {
                 Utility.sendInventory();
             } catch (CommandSyntaxException e) {
                 responder.send("invalid nbt");
-            }
-            finally {
+            } finally {
                 next();
             }
         }
 
         @Override
-        public void message(WebSocket responder, String message) {}
+        public void message(WebSocket responder, String message) {
+        }
     }
+
     private static class Mode extends SocketHandler.Action {
-        private static final List<String> commands = List.of("play","build","code","dev");
+        private static final List<String> commands = List.of("play", "build", "code", "dev");
         private final String command;
 
         Mode(String command) {
@@ -357,6 +439,8 @@ public class SocketHandler {
         @Override
         public void set(WebSocket responder) {}
 
+        }
+
         @Override
         public void start(WebSocket responder) {
             if (CodeClient.location instanceof Plot && !command.isEmpty()) {
@@ -366,6 +450,7 @@ public class SocketHandler {
             }
             next();
         }
+
         @Override
         public void message(WebSocket responder, String message) {}
     }
@@ -427,6 +512,7 @@ public class SocketHandler {
         }
 
         @Override
-        public void message(WebSocket responder, String message) {}
+        public void message(WebSocket responder, String message) {
+        }
     }
 }

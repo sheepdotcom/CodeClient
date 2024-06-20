@@ -6,48 +6,60 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtInt;
 import net.minecraft.nbt.NbtString;
 
+import java.util.Objects;
+
 public abstract class VarItem {
-    public final String id;
     protected JsonObject data;
     // TODO: make it abstract and final, it's that's even possible, and be decided by whatever implements it. This does also mean implementing each named item
-    protected Item material;
+    public abstract String getId();
+    protected abstract Item getIconItem();
+    public abstract JsonObject getDefaultData();
 
-    protected VarItem(String id) {
-        this.id = id;
+    public VarItem(ItemStack item) throws Exception {
+        this(prefetch(item));
+    }
+
+    public VarItem(JsonObject var) {
+        var id = var.get("id").getAsString();
+        if(!Objects.equals(id, getId())) throw new IllegalArgumentException("Given wrong id, expecting (%s) but expected (%s)".formatted(id, getId()));
+        data = var.get("data").getAsJsonObject();
+    }
+
+    public VarItem() {
+        data = getDefaultData();
     }
 
     public static JsonObject prefetch(ItemStack item) throws Exception {
         if (!item.hasNbt()) throw new Exception("Item has no nbt.");
         NbtCompound nbt = item.getNbt();
         if (nbt == null) throw new Exception("NBT is null.");
-        if (!nbt.contains("PublicBukkitValues",NbtElement.COMPOUND_TYPE)) throw new Exception("Item has no PublicBukkitValues");
+        if (!nbt.contains("PublicBukkitValues", NbtElement.COMPOUND_TYPE))
+            throw new Exception("Item has no PublicBukkitValues");
         NbtCompound publicBukkit = nbt.getCompound("PublicBukkitValues");
-        if (!publicBukkit.contains("hypercube:varitem", NbtElement.STRING_TYPE)) throw new Exception("Item has no hypercube:varitem");
+        if (!publicBukkit.contains("hypercube:varitem", NbtElement.STRING_TYPE))
+            throw new Exception("Item has no hypercube:varitem");
         String varitem = publicBukkit.getString("hypercube:varitem");
         return JsonParser.parseString(varitem).getAsJsonObject();
 
     }
-    public VarItem(ItemStack item) throws Exception {
-        this(item.getItem(), prefetch(item));
-    }
 
-    public VarItem(Item material, JsonObject var) {
-        this.material = material;
-        id = var.get("id").getAsString();
-        data = var.get("data").getAsJsonObject();
+    public ItemStack getIcon() {
+        ItemStack item = getIconItem().getDefaultStack();
+        item.setSubNbt("CustomModelData", NbtInt.of(5000));
+        return item;
     }
-
 
     public ItemStack toStack() {
         var pbv = new NbtCompound();
         var varItem = new JsonObject();
-        varItem.addProperty("id",id);
-        varItem.add("data",data);
+        varItem.addProperty("id", getId());
+        varItem.add("data", data);
         pbv.put("hypercube:varitem", NbtString.of(varItem.toString()));
-        ItemStack item = material.getDefaultStack();
-        item.setSubNbt("PublicBukkitValues",pbv);
+        var item = getIcon();
+        item.setSubNbt("PublicBukkitValues", pbv);
         return item;
     }
 
@@ -58,8 +70,8 @@ public abstract class VarItem {
     public JsonObject getVar() {
         // This is probably the best approach tbh instead of updating data constantly
         var var = new JsonObject();
-        var.addProperty("id",id);
-        var.add("data",getData());
+        var.addProperty("id", getId());
+        var.add("data", getData());
         return var;
     }
 }

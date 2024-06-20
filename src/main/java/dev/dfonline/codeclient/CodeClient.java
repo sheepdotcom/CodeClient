@@ -3,46 +3,39 @@ package dev.dfonline.codeclient;
 import com.google.gson.Gson;
 import dev.dfonline.codeclient.action.Action;
 import dev.dfonline.codeclient.action.None;
+import dev.dfonline.codeclient.action.impl.DevForBuild;
 import dev.dfonline.codeclient.config.Config;
-import dev.dfonline.codeclient.dev.BuildClip;
+import dev.dfonline.codeclient.config.KeyBinds;
+import dev.dfonline.codeclient.dev.*;
 import dev.dfonline.codeclient.dev.Debug.Debug;
-import dev.dfonline.codeclient.dev.LastPos;
-import dev.dfonline.codeclient.dev.NoClip;
-import dev.dfonline.codeclient.dev.RecentChestInsert;
-import dev.dfonline.codeclient.dev.menu.DevInventory.DevInventoryScreen;
 import dev.dfonline.codeclient.dev.overlay.ChestPeeker;
-import dev.dfonline.codeclient.location.Dev;
-import dev.dfonline.codeclient.location.Location;
-import dev.dfonline.codeclient.location.Plot;
-import dev.dfonline.codeclient.location.Spawn;
+import dev.dfonline.codeclient.hypercube.actiondump.ActionDump;
+import dev.dfonline.codeclient.location.*;
 import dev.dfonline.codeclient.switcher.StateSwitcher;
 import dev.dfonline.codeclient.websocket.SocketHandler;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.GameMenuScreen;
-import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumerProvider;
-import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.network.listener.PacketListener;
 import net.minecraft.network.packet.Packet;
-import net.minecraft.network.packet.c2s.play.CommandExecutionC2SPacket;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
+import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.CloseScreenS2CPacket;
-import net.minecraft.network.packet.s2c.play.EntityVelocityUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import org.apache.commons.logging.Log;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3i;
 import org.jetbrains.annotations.NotNull;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,17 +44,9 @@ public class CodeClient implements ModInitializer {
     public static final String MOD_NAME = "CodeClient";
     public static final String MOD_ID = "codeclient";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_NAME);
-
-    public static MinecraftClient MC = MinecraftClient.getInstance();
     public static final Gson gson = new Gson();
-    /**
-     * Starts the "Code Palette" screen if pressed.
-     */
-    public static KeyBinding editBind;
-    /**
-     * If in build mode, holding this will allow you to phase through blocks.
-     */
-    public static KeyBinding clipBind;
+    public static MinecraftClient MC = MinecraftClient.getInstance();
+
     public static AutoJoin autoJoin = AutoJoin.NONE;
 
     /**
@@ -74,25 +59,30 @@ public class CodeClient implements ModInitializer {
     public static boolean shouldReload = false;
 
     /**
-     * For all recieving packet events and debugging.
-     * @return If the packet should be cancelled and not acted on. True to ignore.
+     * For all receiving packet events and debugging.
+     *
      * @param <T> Server2Client
+     * @return If the packet should be cancelled and not acted on. True to ignore.
      */
     public static <T extends PacketListener> boolean handlePacket(Packet<T> packet) {
-
-        if(currentAction.onReceivePacket(packet)) return true;
-        if(Debug.handlePacket(packet)) return true;
-        if(BuildClip.handlePacket(packet)) return true;
-        if(ChestPeeker.handlePacket(packet)) return true;
+        if (currentAction.onReceivePacket(packet)) return true;
+        if (Debug.handlePacket(packet)) return true;
+        if (BuildPhaser.handlePacket(packet)) return true;
+        if (ChestPeeker.handlePacket(packet)) return true;
         Event.handlePacket(packet);
         LastPos.handlePacket(packet);
 
-        String name = packet.getClass().getName().replace("net.minecraft.network.packet.s2c.play.","");
-//        if(!List.of("PlayerListS2CPacket","WorldTimeUpdateS2CPacket","GameMessageS2CPacket","KeepAliveS2CPacket", "ChunkDataS2CPacket", "UnloadChunkS2CPacket","TeamS2CPacket", "ChunkRenderDistanceCenterS2CPacket", "MessageHeaderS2CPacket", "LightUpdateS2CPacket", "OverlayMessageS2CPacket").contains(name)) LOGGER.info(name);
-        if((MC.currentScreen instanceof GameMenuScreen || MC.currentScreen instanceof ChatScreen || MC.currentScreen instanceof StateSwitcher) && packet instanceof CloseScreenS2CPacket) {
-            return true;
+        String name = packet.getClass().getName().replace("net.minecraft.network.packet.s2c.play.", "");
+//        if(!java.util.List.of("PlayerListS2CPacket","WorldTimeUpdateS2CPacket","GameMessageS2CPacket","KeepAliveS2CPacket", "ChunkDataS2CPacket", "UnloadChunkS2CPacket","TeamS2CPacket", "ChunkRenderDistanceCenterS2CPacket", "MessageHeaderS2CPacket", "LightUpdateS2CPacket", "OverlayMessageS2CPacket").contains(name)) LOGGER.info(name);
+
+        if (CodeClient.location instanceof Dev dev &&
+                packet instanceof BlockEntityUpdateS2CPacket beu &&
+                dev.isInDev(beu.getPos()) &&
+                MC.world != null &&
+                MC.world.getBlockEntity(beu.getPos()) instanceof SignBlockEntity) {
+            dev.clearLineStarterCache();
         }
-        return false;
+        return (MC.currentScreen instanceof GameMenuScreen || MC.currentScreen instanceof ChatScreen || MC.currentScreen instanceof StateSwitcher) && packet instanceof CloseScreenS2CPacket;
     }
 
     /**
@@ -101,27 +91,25 @@ public class CodeClient implements ModInitializer {
      * Useful for fallback checks and preventing noclip packet spam screwing you over.
      */
     public static boolean noClipOn() {
-        if(MC.player == null) return false;
-        if(!Config.getConfig().NoClipEnabled) return false;
-        if(!(location instanceof Dev)) return false;
-        if(!(currentAction instanceof None)) return false;
-        if(!MC.player.getAbilities().creativeMode) return false;
+        if (MC.player == null) return false;
+        if (!Config.getConfig().NoClipEnabled) return false;
+        if (!(location instanceof Dev)) return false;
+        if (!(currentAction instanceof None)) return false;
+        if (!MC.player.getAbilities().creativeMode) return false;
         return true;
     }
 
     /**
      * All outgoing packet events and debugging.
-     * @return If the packet shouldn't be sent. True to not send.
+     *
      * @param <T> ClientToServer
+     * @return If the packet shouldn't be sent. True to not send.
      */
     public static <T extends PacketListener> boolean onSendPacket(Packet<T> packet) {
-        if(CodeClient.currentAction.onSendPacket(packet)) return true;
-        if(BuildClip.onPacket(packet)) return true;
+        if (CodeClient.currentAction.onSendPacket(packet)) return true;
+        if (BuildPhaser.onPacket(packet)) return true;
         Event.onSendPacket(packet);
-        String name = packet.getClass().getName().replace("net.minecraft.network.packet.c2s.play.","");
-        if(packet instanceof CommandExecutionC2SPacket commandExecutionC2SPacket) {
-            LOGGER.info(commandExecutionC2SPacket.command());
-        }
+        String name = packet.getClass().getName().replace("net.minecraft.network.packet.c2s.play.", "");
 //        LOGGER.info(name);
         return false;
     }
@@ -133,40 +121,107 @@ public class CodeClient implements ModInitializer {
 
         currentAction.onTick();
         Debug.tick();
-        BuildClip.tick();
+        BuildPhaser.tick();
         ChestPeeker.tick();
         RecentChestInsert.tick();
+        KeyBinds.tick();
+        SlotGhostManager.tick();
+        Commands.tick();
 
-        if(location instanceof Dev dev) {
-            if(MC.player == null) return;
-            MC.player.getAbilities().allowFlying = true;
-            if(NoClip.isIgnoringWalls()) MC.player.noClip = true;
-            if(editBind.wasPressed()) {
-                MC.setScreen(new DevInventoryScreen(MC.player));
-            }
-            if(dev.getSize() == null) {
-                var pos = new BlockPos(dev.getX() - 1,49,dev.getZ());
-                if(CodeClient.MC.world.getBlockState(pos.south(50)).isOf(Blocks.STONE)) dev.setSize(Plot.Size.BASIC);
-                if(CodeClient.MC.world.getBlockState(pos.south(100)).isOf(Blocks.STONE)) dev.setSize(Plot.Size.LARGE);
-                if(CodeClient.MC.world.getBlockState(pos.south(300)).isOf(Blocks.STONE)) dev.setSize(Plot.Size.MASSIVE);
-            }
+        if(!(location instanceof Dev) || !(MC.currentScreen instanceof HandledScreen<?>)) {
+            InsertOverlay.reset();
         }
-        if(CodeClient.location instanceof Spawn spawn && spawn.consumeHasJustJoined()) {
-            if(autoJoin == AutoJoin.PLOT) {
+
+        if (location instanceof Dev dev) {
+            if (MC.player == null) return;
+            MC.player.getAbilities().allowFlying = true;
+            if (NoClip.isIgnoringWalls()) MC.player.noClip = true;
+            var pos = new BlockPos(dev.getX() - 1, 49, dev.getZ());
+            if (dev.getSize() == null) {
+                // TODO wait for plugin messages, or make a fix now.
+                var world = CodeClient.MC.world;
+                if(world == null) return;
+                var FIFTY = world.getBlockState(pos.south(50));
+                var FIFTY_ONE = world.getBlockState(pos.south(51));
+                var HUNDRED = world.getBlockState(pos.south(100));
+                var HUNDRED_ONE = world.getBlockState(pos.south(101));
+                var THREE_HUNDRED = world.getBlockState(pos.south(300));
+                var THREE_HUNDRED_ONE = world.getBlockState(pos.south(301));
+                var MEGA = world.getBlockState(pos.add(-19,0,10));
+                var MEGA_ONE = world.getBlockState(pos.add(-20,0,10));
+                if(MEGA_ONE.isOf(Blocks.GRASS_BLOCK) && MEGA.isOf(Blocks.GRASS_BLOCK)) {
+                    dev.setSize(Plot.Size.MEGA);
+                }
+                else if (!MEGA.isOf(Blocks.VOID_AIR) && !MEGA_ONE.isOf(Blocks.VOID_AIR) && !MEGA.isOf(Blocks.GRASS_BLOCK) && !MEGA.isOf(Blocks.STONE) && !MEGA_ONE.isOf(Blocks.GRASS_BLOCK)) {
+                    dev.setSize(Plot.Size.MEGA);
+                }
+                else if (!(FIFTY.isOf(Blocks.VOID_AIR) || FIFTY_ONE.isOf(Blocks.VOID_AIR)) && (!FIFTY.isOf(FIFTY_ONE.getBlock())))
+                    dev.setSize(Plot.Size.BASIC);
+                else if (!(HUNDRED.isOf(Blocks.VOID_AIR) || HUNDRED_ONE.isOf(Blocks.VOID_AIR)) && !HUNDRED.isOf(HUNDRED_ONE.getBlock()))
+                    dev.setSize(Plot.Size.LARGE);
+                else if (!(THREE_HUNDRED.isOf(Blocks.VOID_AIR) || THREE_HUNDRED_ONE.isOf(Blocks.VOID_AIR)) && !THREE_HUNDRED.isOf(THREE_HUNDRED_ONE.getBlock()))
+                    dev.setSize(Plot.Size.MASSIVE);
+
+            }
+            var size = dev.assumeSize();
+            assert CodeClient.MC.world != null;
+            var groundCheck = MC.world.getBlockState(new BlockPos(
+                    Math.max(Math.min((int) MC.player.getX(),dev.getX() - 1),dev.getX() - (size.codeWidth)),
+                    49,
+                    Math.max(Math.min((int) MC.player.getZ(),dev.getZ() + size.codeLength), dev.getZ())
+            ));
+            if(!groundCheck.isOf(Blocks.VOID_AIR))
+                dev.setHasUnderground(!groundCheck.isOf(Blocks.GRASS_BLOCK) && !groundCheck.isOf(Blocks.STONE));
+        }
+        if (CodeClient.location instanceof Spawn spawn && spawn.consumeHasJustJoined()) {
+            if (autoJoin == AutoJoin.PLOT) {
                 MC.getNetworkHandler().sendCommand("join " + Config.getConfig().AutoJoinPlotId);
                 autoJoin = AutoJoin.NONE;
-            } else if(Config.getConfig().AutoFly) {
+            } else if (Config.getConfig().AutoFly) {
                 MC.getNetworkHandler().sendCommand("fly");
             }
         }
     }
+
     public static void onRender(MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers, double cameraX, double cameraY, double cameraZ) {
         Debug.render(matrices, vertexConsumers);
         RecentChestInsert.render(matrices, vertexConsumers, cameraX, cameraY, cameraZ);
-        if(shouldReload) {
+        if (shouldReload) {
             MC.worldRenderer.reload();
             shouldReload = false;
         }
+    }
+
+    /**
+     * Remove all state from being on DF.
+     */
+    public static void clean() {
+        CodeClient.currentAction = new None();
+        CodeClient.location = null;
+        BuildPhaser.disableClipping();
+        Commands.confirm = null;
+        Commands.screen = null;
+        Debug.clean();
+        SlotGhostManager.reset();
+        InsertOverlay.reset();
+    }
+
+    /**
+     * As much as possible, set CodeClient to its startup state.
+     */
+    public static void reset() {
+        clean();
+        SocketHandler.setConnection(null);
+        ActionDump.clear();
+        Config.clear();
+    }
+
+    public static void onModeChange(Location location) {
+        if (Config.getConfig().DevForBuild && (currentAction instanceof None || currentAction instanceof DevForBuild) && location instanceof Build) {
+            currentAction = new DevForBuild(() -> currentAction = new None());
+            currentAction.init();
+        }
+        currentAction.onModeChange(location);
     }
 
     /**
@@ -178,40 +233,35 @@ public class CodeClient implements ModInitializer {
      */
     @Override
     public void onInitialize() {
+        ClientTickEvents.START_CLIENT_TICK.register(client -> {
+            if (MC.player == null || MC.world == null) clean();
+        });
+
         MC = MinecraftClient.getInstance();
         BlockRenderLayerMap.INSTANCE.putBlock(Blocks.BARRIER, RenderLayer.getTranslucent());
         BlockRenderLayerMap.INSTANCE.putBlock(Blocks.STRUCTURE_VOID, RenderLayer.getTranslucent());
         BlockRenderLayerMap.INSTANCE.putBlock(Blocks.LIGHT, RenderLayer.getTranslucent());
 
-        ClientLifecycleEvents.CLIENT_STOPPING.register(new Identifier(MOD_ID,"close"), client -> SocketHandler.stop());
+        ClientLifecycleEvents.CLIENT_STOPPING.register(new Identifier(MOD_ID, "close"), client -> SocketHandler.stop());
 
-        if(Config.getConfig().CodeClientAPI) {
+        if (Config.getConfig().CodeClientAPI) {
             try {
                 SocketHandler.start();
             } catch (Exception e) {
                 LOGGER.error(e.getMessage());
             }
         }
-        if(Config.getConfig().AutoJoin) {
+        if (Config.getConfig().AutoJoin) {
             autoJoin = AutoJoin.GAME;
         }
 
-        editBind = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.codeclient.actionpallete",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_Y,
-                "category.codeclient.dev"
-        ));
-        clipBind = KeyBindingHelper.registerKeyBinding(new KeyBinding(
-                "key.codeclient.phaser",
-                InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_V,
-                "category.codeclient.dev"
-        ));
+        KeyBinds.init();
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
             Commands.register(dispatcher);
         });
+
+        CodeClient.LOGGER.info("CodeClient, making it easier to wipe your plot and get banned for hacks since 2022");
     }
 
     public enum AutoJoin {

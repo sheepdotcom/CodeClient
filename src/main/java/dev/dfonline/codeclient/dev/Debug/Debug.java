@@ -2,7 +2,9 @@ package dev.dfonline.codeclient.dev.Debug;
 
 import dev.dfonline.codeclient.CodeClient;
 import dev.dfonline.codeclient.OverlayManager;
+import dev.dfonline.codeclient.Utility;
 import dev.dfonline.codeclient.config.Config;
+import dev.dfonline.codeclient.location.Dev;
 import dev.dfonline.codeclient.location.Plot;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.debug.DebugRenderer;
@@ -10,105 +12,121 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.network.listener.PacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
+import net.minecraft.text.PlainTextContent;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Debug {
-    public static boolean active = false;
+    private static Double CPU = null;
+    private static List<Text> text = null;
+    private static HashMap<Vec3d, Text> locations = new HashMap<>();
+    private static boolean active = false;
 
-    public static Variables variables = new Variables();
-    public static Double CPU = null;
-    private static Variable variable;
+    public static void clean() {
+        CPU = null;
+        text = null;
+        locations = new HashMap<>();
+        active = false;
+    }
 
     public static <T extends PacketListener> boolean handlePacket(Packet<T> packet) {
-        if(!Config.getConfig().CCDBUG) return false;
-        if(packet instanceof OverlayMessageS2CPacket overlay) {
-            String message = overlay.getMessage().getString();
-            String[] args = message.split(" ");
-            if(args.length > 0 && args[0].equals("ccdbug")) {
-                if(args.length > 1) {
-                    if(args[1].equals("hello")) {
-                        active = true;
-                        if(args.length > 3 && CodeClient.location instanceof Plot plot) {
-                            plot.setOrigin(Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+        if (CodeClient.location instanceof Plot plot) {
+            if (!Config.getConfig().CCDBUG) return false;
+            if (packet instanceof OverlayMessageS2CPacket overlay) {
+                var txt = overlay.getMessage();
+                if (Text.empty().equals(txt)) {
+                    return false;
+                }
+                var siblings = txt.getSiblings();
+                if (siblings.isEmpty()) {
+                    return false;
+                }
+                var command = siblings.get(0);
+                if (!Objects.equals(command.getStyle().getColor(), TextColor.fromRgb(0x00ccdb))) return false;
+                if (command.getContent().equals(new PlainTextContent.Literal("text"))) {
+                    boolean first = true;
+                    text = new ArrayList<>();
+                    for (var part : siblings) {
+                        if (first) {
+                            first = false;
+                            continue;
                         }
-                    }
-                    if(args.length > 2 && args[1].equals("var")) {
-                        if(args[2].equals("set")) {
-                            variable = new Variable(message.replaceFirst("^ccdbug var set ",""));
-                        }
-                        if(args[2].equals("type")) {
-                            Variable.ValueType type = Variable.ValueType.valueTypeMap.get(message.replaceFirst("^ccdbug var type ",""));
-                            variable.type = type;
-                            if(type == Variable.ValueType.Dead) {
-                                variables.addOrUpdate(variable);
-                                variable = null;
-                            }
-                        }
-                        if(args[2].equals("value") && variable != null) {
-                            variable.value = message.replaceFirst("^ccdbug var value ", "");
-                            variables.addOrUpdate(variable);
-                            variable = null;
-                        }
+                        text.add(part);
                     }
                 }
+                if (command.getContent().equals(new PlainTextContent.Literal("location"))) {
+                    var locList = new HashMap<Vec3d, Text>();
+                    boolean first = true;
+                    for (var part : siblings) {
+                        if (first) {
+                            first = false;
+                            continue;
+                        }
+                        if (part.getSiblings().size() < 2) continue;
+                        var pos = Pattern.compile("-?\\d+(.\\d+)?")
+                                .matcher(part.getSiblings().get(0).getString())
+                                .results()
+                                .map(MatchResult::group)
+                                .toList();
+                        if (pos.size() < 3) continue;
+                        try {
+                            var vec = new Vec3d(Double.parseDouble(pos.get(0)), Double.parseDouble(pos.get(1)), Double.parseDouble(pos.get(2))).add(plot.getPos());
+                            locList.put(vec, part.getSiblings().get(1));
+                        } catch (Exception ignored) {
+                        }
+                    }
+                    locations = locList;
+                }
+                active = true;
+                return true;
+//            if(command) {
+//                if(siblings.size() > 1) {
+//                    text = siblings.get(1);
+//                }
+//                else {
+//                    text = Text.empty();
+//                }
 //                updateDisplay();
-                return true;
-            }
-            if(active && message.matches("^CPU Usage: \\[▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮] \\([\\d.]+%\\)$")) {
-                CPU = Double.parseDouble(message.replaceAll("(^CPU Usage: \\[▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮▮] \\(|%\\)$)",""));
-                return true;
+//            }
             }
         }
         return false;
     }
 
     public static void updateDisplay() {
+        if (!active) return;
+        if (text == null) return;
         OverlayManager.setOverlayText();
-        OverlayManager.addOverlayText(Text.literal("CCDBUG").formatted(Formatting.YELLOW,Formatting.BOLD));
-        if(CPU != null) {
+        OverlayManager.addOverlayText(Text.empty().append(Text.literal("CCDBUG").formatted(Formatting.YELLOW, Formatting.BOLD)).append(" (/abort to hide)"));
+        if (CPU != null) {
             OverlayManager.addOverlayText(Text.literal("CPU Usage: ").formatted(Formatting.GOLD).append(Text.literal(String.valueOf(CPU)).formatted(Formatting.AQUA)));
+            OverlayManager.addOverlayText(Text.empty());
         }
-        OverlayManager.addOverlayText(Text.empty());
-        List<Variable> variableList = List.copyOf(variables.variables);
-        for (Variable variable: variableList) {
-            MutableText text = Text.literal(variable.type.name).fillStyle(Style.EMPTY.withColor(variable.type.color)).append(" ").append(Text.literal(variable.name).formatted(Formatting.YELLOW));
-            if(variable.value != null) {
-                text.append(" ").append(Text.literal(variable.value).formatted(Formatting.AQUA));
-            }
-            OverlayManager.addOverlayText(text);
+        for (var line : text) {
+            OverlayManager.addOverlayText(line);
         }
     }
 
     public static void tick() {
-        if(Config.getConfig().CCDBUG && active && CodeClient.location instanceof Plot) {
+        if (Config.getConfig().CCDBUG && active && CodeClient.location instanceof Plot) {
             updateDisplay();
-        }
-        else {
-            active = false;
-            variables.clear();
+        } else {
             CPU = null;
         }
     }
 
     public static void render(MatrixStack matrices, VertexConsumerProvider.Immediate vertexConsumers) {
-        for (Variable variable: variables.variables) {
-            if(variable.type == Variable.ValueType.Loc && CodeClient.location instanceof Plot plot) {
-                try {
-                    String[] posmaker = variable.value.replaceAll("^\\[|,|]$","").split(" ");
-                    Vec3d pos = new Vec3d(
-                            Double.parseDouble(posmaker[0]),
-                            Double.parseDouble(posmaker[1]),
-                            Double.parseDouble(posmaker[2]))
-                        .add(plot.getX(),0, plot.getZ());
-                    DebugRenderer.drawString(matrices,vertexConsumers, variable.name, pos.x,pos.y,pos.z, 0xFFFFFF, 0.02F, true, 0, true);
-                } catch (Exception ignored) {}
-            }
-        }
+        if (active) for (var entry : locations.entrySet())
+            DebugRenderer.drawString(matrices, vertexConsumers, entry.getValue().getString(), entry.getKey().x, entry.getKey().y, entry.getKey().z, 0xFFFFFF, 0.02F, true, 0, true);
     }
 }

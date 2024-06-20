@@ -5,19 +5,12 @@ import dev.dfonline.codeclient.CodeClient;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.zip.GZIPInputStream;
 
 public class Template {
     public ArrayList<TemplateBlock> blocks;
-
-    public int getLength() {
-        int length = 0;
-        for (var block: blocks) length += block.getLength();
-        return length;
-    }
 
     /**
      * Parse base64+gzip data
@@ -57,5 +50,11 @@ public class Template {
 
             return bos.toByteArray();
         }
+    }
+
+    public int getLength() {
+        int length = 0;
+        for (var block : blocks) length += block.getLength();
+        return length;
     }
 }
