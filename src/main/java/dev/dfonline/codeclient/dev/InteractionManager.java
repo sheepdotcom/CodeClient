@@ -7,6 +7,7 @@ import dev.dfonline.codeclient.ChatType;
 import dev.dfonline.codeclient.CodeClient;
 import dev.dfonline.codeclient.Utility;
 import dev.dfonline.codeclient.config.Config;
+import dev.dfonline.codeclient.dev.overlay.ActionViewer;
 import dev.dfonline.codeclient.dev.overlay.ChestPeeker;
 import dev.dfonline.codeclient.location.Dev;
 import dev.dfonline.codeclient.switcher.ScopeSwitcher;
@@ -105,8 +106,18 @@ public class InteractionManager {
             BlockPos breakPos = isBlockBreakable(pos);
             if (breakPos != null) {
                 if (Config.getConfig().ReportBrokenBlock && validBlocks.contains(CodeClient.MC.world.getBlockState(breakPos).getBlock()) && CodeClient.MC.world.getBlockEntity(breakPos.west()) instanceof SignBlockEntity sign) {
-                    if (!sign.getFrontText().getMessage(1, false).equals(Text.empty()))
-                        Utility.sendMessage(Text.translatable("codeclient.interaction.broke", Text.empty().formatted(Formatting.WHITE).append(sign.getFrontText().getMessage(1, false))).formatted(Formatting.AQUA), ChatType.INFO);
+                    Text signText = sign.getFrontText().getMessage(1, false);
+                    boolean isSignTextEmpty = signText.getString().isEmpty();
+
+                    Utility.sendMessage(
+                        isSignTextEmpty
+                                ? Text.translatable("codeclient.interaction.broke_empty", Text.translatable("hypercube.codeblock." +
+                                    sign.getFrontText().getMessage(0, false).getString().toLowerCase().replace(' ', '_'))).formatted(Formatting.AQUA)
+                                : Text.translatable("codeclient.interaction.broke", Text.empty().formatted(Formatting.WHITE).append(signText)).formatted(Formatting.AQUA)
+                    );
+
+
+
                 }
                 BlockBreakDeltaCalculator.breakBlock(pos);
             }
@@ -241,6 +252,7 @@ public class InteractionManager {
 
     public static BlockHitResult onBlockInteract(BlockHitResult hitResult) {
         SlotGhostManager.onClickChest(hitResult);
+        ActionViewer.onClickChest(hitResult);
         if (CodeClient.location instanceof Dev plot && plot.isInDev(hitResult.getBlockPos())) {
             plot.getLineStartCache();
             ChestPeeker.invalidate();

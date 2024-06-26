@@ -15,6 +15,7 @@ import dev.dfonline.codeclient.location.Dev;
 import dev.dfonline.codeclient.location.Plot;
 import dev.dfonline.codeclient.websocket.SocketHandler;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.entity.SignText;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.screen.Screen;
@@ -129,17 +130,17 @@ public class Commands {
         }))));
 
         dispatcher.register(literal("auth").executes(context -> {
-            SocketHandler.setAuthorised(true);
+            SocketHandler.setAcceptedScopes(true);
             Utility.sendMessage(Text.translatable("codeclient.api.authorised")
-                            .append(Text.literal("\n")).append(Text.translatable("codeclient.api.warning").formatted(Formatting.BOLD))
                             .append(Text.literal("\n")).append(Text.translatable("codeclient.api.remove"))
                     , ChatType.SUCCESS);
             return 0;
         }).then(literal("remove").executes(context -> {
-            SocketHandler.setAuthorised(false);
+            SocketHandler.setAcceptedScopes(false);
             Utility.sendMessage(Text.translatable("codeclient.api.removed"), ChatType.SUCCESS);
             return 0;
         })).then(literal("disconnect").executes(context -> {
+            Utility.sendMessage(Text.translatable("codeclient.api.disconnected"), ChatType.SUCCESS);
             SocketHandler.setConnection(null);
             return 0;
         })));
@@ -373,7 +374,8 @@ public class Commands {
             return -1;
         })));
 
-        dispatcher.register(literal("search")
+
+        var searchCommand = dispatcher.register(literal("ccsearch")
                 .then(argument("query",greedyString()).suggests((context,builder) -> suggestJump(JumpType.ANY, context, builder)).executes(context -> {
                     if(CodeClient.location instanceof Dev dev) {
                         var query = context.getArgument("query", String.class);
@@ -414,6 +416,9 @@ public class Commands {
                     return 0;
                 })
         ));
+        if (!FabricLoader.getInstance().isModLoaded("recode")) {
+            dispatcher.register(literal("search").redirect(searchCommand));
+        }
 
         LiteralCommandNode<FabricClientCommandSource> jumpCommand = dispatcher.register(literal("jump")
                 .then(literal("player").then(argument("name", greedyString()).suggests((context, builder) -> suggestJump(JumpType.PLAYER_EVENT, context, builder)).executes(context -> {

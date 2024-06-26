@@ -10,14 +10,40 @@
   "key.codeclient.tp.backward": "Teleport Backwards",
   "key.codeclient.open_action": "Open Action",
 
+  "codeclient.config.tab.general": "General",
+
+  "codeclient.config.api": "CodeClient API",
+  "codeclient.config.api.description": "Allows external apps to add code to your plot.",
+  "codeclient.config.read_charset": "Read Charset",
+  "codeclient.config.read_charset.description": "Can fix artifacts in ActionDump loading.",
+  "codeclient.config.save_charset": "Save Charset",
+  "codeclient.config.save_charset.description": "When getting the actiondump get it in a needed format.",
+
+  "codeclient.config.requires_restart": "(requires restart)",
+  "codeclient.config.default_recommended": "Default recommended.",
+
   "codeclient.config.dev_for_build": "Dev mode for build",
   "codeclient.config.dev_for_build.description": "Uses dev mode instead of build mode, clearing your inventory and teleporting you.",
+  "codeclient.config.auto_focus_search": "Auto Focus Search",
+  "codeclient.config.auto_focus_search.description": "When opening the Code Palette (%s) automatically select the search bar.",
+  "codeclient.config.auto_focus_search.description.2": "This is disabled because it interferes with navigation binds.",
   "codeclient.config.chat_edits_vars": "Auto edit values",
   "codeclient.config.chat_edits_vars.description": "Opening chat whilst holding a value will automatically put the contents in chat.",
+  "codeclient.config.ccdbug": "CCDBUG",
+  "codeclient.config.ccdbug.description": "Toggle CCDBUG, which is a variable and entity watcher for debugging.",
   "codeclient.config.insert_overlay": "Click to insert value",
   "codeclient.config.insert_overlay.description": "Click on an empty slot in a code chest to insert a value.",
   "codeclient.config.param_ghosts": "Parameter Ghosts",
   "codeclient.config.param_ghosts.description": "See and be able to hover parameter information in chest slots.",
+
+  "codeclient.config.category.action_viewer": "Action Viewer",
+  "codeclient.config.category.action_viewer.description": "Display a tooltip that shows the code block's description.",
+  "codeclient.config.action_viewer": "Enable Action Viewer",
+  "codeclient.config.action_viewer.description": "Pin code block description to the inventory while inside code chests.",
+  "codeclient.config.invert_action_viewer_scroll": "Invert Scroll Direction",
+  "codeclient.config.invert_action_viewer_scroll.description": "Invert the direction the action tooltip scrolls inside code chests.",
+  "codeclient.config.action_viewer_alignment": "Tooltip Alignment",
+  "codeclient.config.action_viewer_alignment.description": "Change where the tooltip displays inside code chests.",
 
   "codeclient.config.command.query": "Option %s is set to %s.",
   "codeclient.config.command.query.fail": "There is no option with name %s.",
@@ -52,8 +78,8 @@
   "codeclient.action.get_action_dump.abort": "Type %s to hide this.",
   "codeclient.action.get_action_dump.scanning.title": "GetActionDump:",
   "codeclient.action.get_action_dump.scanning.size": "Size: %sb",
-  "codeclient.action.get_action_dump.scanning.lines": "Size: %s",
-  "codeclient.action.get_action_dump.scanning.time": "Size: %ss",
+  "codeclient.action.get_action_dump.scanning.lines": "Lines: %s",
+  "codeclient.action.get_action_dump.scanning.time": "Time: %ss",
   "codeclient.action.get_action_dump.scanning.complete": "Complete!",
   "codeclient.action.get_action_dump.scanning.complete.file": "There will now be a file in your Minecraft directory",
   "codeclient.action.get_action_dump.scanning.complete.save_error": "It will instead be printed in the console.",
@@ -92,12 +118,40 @@
   "codeclient.files.open_native": "Click to open it in file explorer.",
   "codeclient.files.not_in_templates": "That is not in the templates directory.",
 
-  "codeclient.api.connect": "An app connected to codeclient.",
+  "codeclient.api.connect": "An app connected to CodeClient.",
   "codeclient.api.run_auth": "Run /auth to authorize it.",
-  "codeclient.api.authorised": "The connecting app has now been authorized.",
-  "codeclient.api.warning": "Authorizing apps allows them to do anything to your plot code, such as clearing and writing code.",
-  "codeclient.api.remove": "You can remove the app by running /auth remove.",
-  "codeclient.api.removed": "The connected app is no longer authorized.",
+  "codeclient.api.scope.prompt": "The connected application has requested the following permissions:",
 
-  "codeclient.interaction.broke": "You just broke %s."
+  "codeclient.api.scope.type.default": "Give items",
+  "codeclient.api.scope.type.read_plot": "Scan plot code & get plot size",
+  "codeclient.api.scope.type.movement": "Teleport to plot spawn & switch modes",
+  "codeclient.api.scope.type.inventory": "Read & write the entire inventory",
+  "codeclient.api.scope.type.write_code": "Place templates in the plot",
+  "codeclient.api.scope.type.clear_plot": "Clear the entirety of your plot's codespace",
+
+
+  "codeclient.api.danger.default": "Default",
+  "codeclient.api.danger.default.description": "Assigned by default to all applications.",
+  "codeclient.api.danger.safe": "Safe",
+  "codeclient.api.danger.safe.description": "Can be granted safely.",
+  "codeclient.api.danger.caution": "Caution",
+  "codeclient.api.danger.caution.description": "Grant to trusted applications.",
+  "codeclient.api.danger.risky": "Risky",
+  "codeclient.api.danger.risky.description": "Grant with caution.",
+  "codeclient.api.danger.dangerous": "Dangerous",
+  "codeclient.api.danger.dangerous.description": "Very risky; accept with extreme caution.",
+
+  "codeclient.api.authorised": "The connected application is now authorized with the requested permissions.",
+  "codeclient.api.remove": "You can remove the app by running /auth remove.",
+  "codeclient.api.removed": "Removed extra permissions from the connected app.",
+  "codeclient.api.disconnected": "The connected app can no longer interact with CodeClient.",
+  "codeclient.api.scope.invalid": "The connected app requested an invalid permission.",
+
+  "codeclient.interaction.broke": "You just broke %s.",
+  "codeclient.interaction.broke_empty": "You just broke an empty %s.",
+
+  "hypercube.codeblock.function": "Function",
+  "hypercube.codeblock.call_function": "Call Function",
+  "hypercube.codeblock.process": "Process",
+  "hypercube.codeblock.start_process": "Start Process"
 }

@@ -73,6 +73,9 @@ public class Config {
     public boolean ChatEditsVars = true;
     public boolean InsertOverlay = true;
     public boolean ParameterGhosts = true;
+    public boolean ActionViewer = true;
+    public boolean InvertActionViewerScroll = false;
+    public ActionViewerAlignment ActionViewerLocation = ActionViewerAlignment.TOP;
     public boolean EnableSwitchers = true;
     public boolean ModeSwitcher = true;
     public boolean NodeSwitcher = false;
@@ -147,6 +150,9 @@ public class Config {
             object.addProperty("ChatEditsVars",ChatEditsVars);
             object.addProperty("InsertOverlay",InsertOverlay);
             object.addProperty("ParameterGhosts",ParameterGhosts);
+            object.addProperty("ActionViewer",ActionViewer);
+            object.addProperty("InvertActionViewerScroll",InvertActionViewerScroll);
+            object.addProperty("ActionViewerLocation",ActionViewerLocation.name());
             object.addProperty("EnableSwitchers",EnableSwitchers);
             object.addProperty("ModeSwitcher",ModeSwitcher);
             object.addProperty("NodeSwitcher",NodeSwitcher);
@@ -161,13 +167,13 @@ public class Config {
                 .title(Text.literal("CodeClient Config"))
                 //<editor-fold desc="General">
                 .category(ConfigCategory.createBuilder()
-                        .name(Text.literal("General"))
+                        .name(Text.translatable("codeclient.config.tab.general"))
                         .tooltip(Text.literal("General always specific options for CodeClient"))
                         .option(Option.createBuilder(boolean.class)
-                                .name(Text.literal("CodeClient API"))
+                                .name(Text.translatable("codeclient.config.api"))
                                 .description(OptionDescription.createBuilder()
-                                        .text(Text.literal("Allows external apps to add code to your plot."))
-                                        .text(Text.literal("(requires restart)"))
+                                        .text(Text.translatable("codeclient.config.api.description"))
+                                        .text(Text.translatable("codeclient.config.requires_restart"))
                                         .build())
                                 .binding(
                                         false,
@@ -178,9 +184,9 @@ public class Config {
                                 .flag(OptionFlag.GAME_RESTART)
                                 .build())
                         .option(Option.createBuilder(CharSetOption.class)
-                                .name(Text.literal("Read Charset"))
+                                .name(Text.translatable("codeclient.config.read_charset"))
                                 .description(OptionDescription.createBuilder()
-                                        .text(Text.literal("Can fix artifacts in ActionDump loading."))
+                                        .text(Text.translatable("codeclient.config.read_charset.description"))
                                         .build())
                                 .binding(
                                         CharSetOption.UTF_8,
@@ -191,9 +197,9 @@ public class Config {
                                 .controller(nodeOption -> () -> new EnumController<>(nodeOption, CharSetOption.class))
                                 .build())
                         .option(Option.createBuilder(CharSetOption.class)
-                                .name(Text.literal("Save Charset"))
+                                .name(Text.translatable("codeclient.config.save_charset"))
                                 .description(OptionDescription.createBuilder()
-                                        .text(Text.literal("When getting the actiondump get it in a needed format."), Text.literal("Default recommended."))
+                                        .text(Text.translatable("codeclient.config.save_charset.description"), Text.translatable("codeclient.config.default_recommended"))
                                         .build())
                                 .binding(
                                         CharSetOption.UTF_8,
@@ -214,8 +220,8 @@ public class Config {
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .option(Option.createBuilder(boolean.class)
-                                .name(Text.literal("Auto Focus Search"))
-                                .description(OptionDescription.of(Text.literal("When opening the Code Palette (").append(Text.keybind("key.codeclient.codepalette")).append(") automatically select the search bar."), Text.literal("This is disabled because it interferes with navigation binds.")))
+                                .name(Text.translatable("codeclient.config.auto_focus_search"))
+                                .description(OptionDescription.of(Text.translatable("codeclient.config.auto_focus_search.description", Text.keybind("key.codeclient.codepalette")), Text.translatable("codeclient.config.auto_focus_search.description.2")))
                                 .binding(
                                         false,
                                         () -> FocusSearch,
@@ -234,9 +240,9 @@ public class Config {
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
                         .option(Option.createBuilder(boolean.class)
-                                .name(Text.literal("CCDBUG"))
+                                .name(Text.translatable("codeclient.config.ccdbug"))
                                 .description(OptionDescription.createBuilder()
-                                        .text(Text.literal("Toggle CCDBUG, which is a variable and entity watcher for debugging."))
+                                        .text(Text.translatable("codeclient.config.ccdbug.description"))
                                         .build())
                                 .binding(
                                         true,
@@ -426,19 +432,6 @@ public class Config {
                                         false,
                                         () -> TeleportDown,
                                         opt -> TeleportDown = opt
-                                )
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .option(Option.createBuilder(boolean.class)
-                                .name(Text.literal("Underground Dev Area"))
-                                .description(OptionDescription.createBuilder()
-                                        .text(Text.literal("Allows you to go under the dev area."))
-                                        .text(Text.literal("Completely useless as you cannot place down there."))
-                                        .build())
-                                .binding(
-                                        true,
-                                        () -> UnderDev,
-                                        option -> UnderDev = option
                                 )
                                 .controller(TickBoxControllerBuilder::create)
                                 .build())
@@ -644,6 +637,42 @@ public class Config {
                                         opt -> ParameterGhosts = opt
                                 )
                                 .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        //</editor-fold>
+                        //<editor-fold desc="Action Viewer">
+                        .group(OptionGroup.createBuilder()
+                                .name(Text.translatable("codeclient.config.category.action_viewer"))
+                                .description(OptionDescription.of(Text.translatable("codeclient.config.category.action_viewer.description")))
+                                .option(Option.createBuilder(Boolean.class)
+                                        .name(Text.translatable("codeclient.config.action_viewer"))
+                                        .description(OptionDescription.of(Text.translatable("codeclient.config.action_viewer.description")))
+                                        .binding(
+                                                true,
+                                                () -> ActionViewer,
+                                                opt -> ActionViewer = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.createBuilder(Boolean.class)
+                                        .name(Text.translatable("codeclient.config.invert_action_viewer_scroll"))
+                                        .description(OptionDescription.of(Text.translatable("codeclient.config.invert_action_viewer_scroll.description")))
+                                        .binding(
+                                                false,
+                                                () -> InvertActionViewerScroll,
+                                                opt -> InvertActionViewerScroll = opt
+                                        )
+                                        .controller(TickBoxControllerBuilder::create)
+                                        .build())
+                                .option(Option.createBuilder(ActionViewerAlignment.class)
+                                        .name(Text.translatable("codeclient.config.action_viewer_alignment"))
+                                        .description(OptionDescription.of(Text.translatable("codeclient.config.action_viewer_alignment.description")))
+                                        .binding(
+                                                ActionViewerAlignment.TOP,
+                                                () -> ActionViewerLocation,
+                                                opt -> ActionViewerLocation = opt
+                                        )
+                                        .controller(nodeOption -> () -> new EnumController<>(nodeOption, ActionViewerAlignment.class))
+                                        .build())
                                 .build())
                         //</editor-fold>
                         //<editor-fold desc="Chest Preview">
@@ -908,5 +937,10 @@ public class Config {
             this.description = description;
             this.size = size;
         }
+    }
+
+    public enum ActionViewerAlignment {
+        CENTER,
+        TOP;
     }
 }
