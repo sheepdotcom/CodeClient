@@ -42,7 +42,7 @@ public abstract class MDrawContext {
         var data = anyData.getAsJsonObject();
         var anyId = var.get("id");
         if (anyId == null) return;
-        Text text;
+        Text text = null;
         switch (anyId.getAsString()) {
             case "var": {
                 try {

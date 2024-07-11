@@ -7,6 +7,7 @@ public enum AuthScope {
     INVENTORY(AuthScopeDangerLevel.SAFE, "inventory"),
     WRITE_CODE(AuthScopeDangerLevel.RISKY, "write_code"),
     CLEAR_PLOT(AuthScopeDangerLevel.DANGEROUS, "clear_plot"),
+    SEND_MESSAGES(AuthScopeDangerLevel.DANGEROUS, "send_messages"),
     ;
 
     public final AuthScopeDangerLevel dangerLevel;

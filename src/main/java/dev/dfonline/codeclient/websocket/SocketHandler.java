@@ -1,7 +1,6 @@
 package dev.dfonline.codeclient.websocket;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.serialization.Codec;
 import dev.dfonline.codeclient.CodeClient;
 import dev.dfonline.codeclient.Utility;
 import dev.dfonline.codeclient.action.None;
@@ -546,7 +545,7 @@ public class SocketHandler {
         private final String msg;
 
         Msg(String msg) {
-            super("msg");
+            super("msg", AuthScope.SEND_MESSAGES);
             this.msg = msg;
         }
 
@@ -566,7 +565,7 @@ public class SocketHandler {
         private final String cmd;
 
         Cmd(String cmd) {
-            super("cmd");
+            super("cmd", AuthScope.SEND_MESSAGES);
             this.cmd = cmd;
         }
 
@@ -586,7 +585,7 @@ public class SocketHandler {
         private final String content;
 
         Layer(String content) {
-            super("content");
+            super("content", AuthScope.WRITE_CODE);
             this.content = "p codespace " + content;
         }
 

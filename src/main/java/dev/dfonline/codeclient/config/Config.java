@@ -9,7 +9,6 @@ import dev.isxander.yacl3.api.*;
 import dev.isxander.yacl3.api.controller.*;
 import dev.isxander.yacl3.gui.controllers.cycling.EnumController;
 import dev.isxander.yacl3.impl.controller.IntegerFieldControllerBuilderImpl;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.Style;
@@ -64,7 +63,6 @@ public class Config {
     public boolean SignPeeker = true;
     public boolean SignColored = true;
     public int BorderDistance = 2;
-    public boolean UnderDev = false;
     public boolean NoNumberTrim = false;
     public boolean TextValuePreview = false;
     public CustomChestMenuType CustomCodeChest = CustomChestMenuType.OFF;
@@ -145,6 +143,10 @@ public class Config {
             object.addProperty("UseSelectionColor", UseSelectionColor);
             object.addProperty("Line4Color", Line4Color);
             object.addProperty("SignPeeker", SignPeeker);
+            object.addProperty("SignColored", SignColored);
+            object.addProperty("BorderDistance", BorderDistance);
+            object.addProperty("NoNumberTrim", NoNumberTrim);
+            object.addProperty("TextValuePreview", TextValuePreview);
             object.addProperty("CustomCodeChest", CustomCodeChest.name());
             object.addProperty("PickAction", PickAction);
             object.addProperty("DevForBuild", DevForBuild);
@@ -621,16 +623,6 @@ public class Config {
                                 .flag(OptionFlag.RELOAD_CHUNKS)
                                 .build())
                         .option(Option.createBuilder(Boolean.class)
-                                .name(Text.literal("Show I On Line Scope"))
-                                .description(OptionDescription.of(Text.literal("Whenever LINE is shortened, shorten it to I.")))
-                                .binding(
-                                        false,
-                                        () -> UseIForLineScope,
-                                        opt -> UseIForLineScope = opt
-                                )
-                                .controller(TickBoxControllerBuilder::create)
-                                .build())
-                        .option(Option.createBuilder(Boolean.class)
                                 .name(Text.literal("Show sign text from behind"))
                                 .description(OptionDescription.of(Text.literal("Show the text on a sign when looking at a codeblock from behind in a popup.")))
                                 .binding(
@@ -685,18 +677,6 @@ public class Config {
                                         )
                                         .controller(nodeOption -> () -> new EnumController<>(nodeOption, ActionViewerAlignment.class))
                                         .build())
-                                .build())
-                        //</editor-fold>
-                        //<editor-fold desc="Chest Preview">
-                        .option(Option.createBuilder(Boolean.class)
-                                .name(Text.literal("Show sign text from behind"))
-                                .description(OptionDescription.of(Text.literal("Show the text on a sign when looking at a codeblock from behind in a popup.")))
-                                .binding(
-                                        true,
-                                        () -> SignPeeker,
-                                        opt -> SignPeeker = opt
-                                )
-                                .controller(TickBoxControllerBuilder::create)
                                 .build())
                         //</editor-fold>
                         //<editor-fold desc="Chest Preview">
