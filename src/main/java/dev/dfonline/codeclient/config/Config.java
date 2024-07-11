@@ -76,6 +76,7 @@ public class Config {
     public boolean ActionViewer = true;
     public boolean InvertActionViewerScroll = false;
     public ActionViewerAlignment ActionViewerLocation = ActionViewerAlignment.TOP;
+    public int RecentValues = 0;
     public boolean EnableSwitchers = true;
     public boolean ModeSwitcher = true;
     public boolean NodeSwitcher = false;
@@ -153,6 +154,7 @@ public class Config {
             object.addProperty("ActionViewer",ActionViewer);
             object.addProperty("InvertActionViewerScroll",InvertActionViewerScroll);
             object.addProperty("ActionViewerLocation",ActionViewerLocation.name());
+            object.addProperty("RecentValues", RecentValues);
             object.addProperty("EnableSwitchers",EnableSwitchers);
             object.addProperty("ModeSwitcher",ModeSwitcher);
             object.addProperty("NodeSwitcher",NodeSwitcher);
@@ -587,6 +589,16 @@ public class Config {
                                         opt -> PickAction = opt
                                 )
                                 .controller(TickBoxControllerBuilder::create)
+                                .build())
+                        .option(Option.createBuilder(int.class)
+                                .name(Text.literal("Recent Values"))
+                                .description(OptionDescription.of(Text.literal("Amount of recently used values to remember.")))
+                                .binding(
+                                        0,
+                                        () -> RecentValues,
+                                        opt -> RecentValues = opt
+                                )
+                                .controller(integerOption -> IntegerFieldControllerBuilder.create(integerOption).range(0, 100))
                                 .build())
                         .build())
                 //</editor-fold>
